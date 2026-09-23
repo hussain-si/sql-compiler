@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!--LIGHT-DEFAULT-START--><script>(function(){var t=null;try{t=localStorage.getItem("sqlpg:theme");}catch(e){}if(t)t=String(t).replace(/"/g,"");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");})();</script><!--LIGHT-DEFAULT-END-->
+
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SQL Playground</title>
@@ -693,14 +696,14 @@ html[data-theme="dark"] #loginGate{
   --lg-shadow:0 18px 40px rgba(0,0,0,.45);
   --lg-ground:radial-gradient(circle at 12% 0%,rgba(98,165,255,.15),transparent 55%),radial-gradient(circle at 88% 4%,rgba(61,220,151,.09),transparent 50%)}
 #loginGate *{box-sizing:border-box;margin:0}
-#lgCard{width:min(540px,100%);background:var(--lg-panel);border:1px solid var(--lg-line);border-radius:18px;
+#lgCard{width:min(380px,100%);background:var(--lg-panel);border:1px solid var(--lg-line);border-radius:18px;
   box-shadow:var(--lg-shadow);padding:20px 22px 16px}
 #lgCard .lg-brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
 #lgCard .lg-brand i{flex:none;display:grid;place-items:center;min-width:42px;height:42px;padding:0 9px;border-radius:12px;
   background:linear-gradient(135deg,#0d141f,#00465a 55%,#00758f);color:#eef6ff;font:700 13px/1 var(--lg-display);font-style:normal;letter-spacing:.02em}
 #lgCard .lg-brand b{display:block;font:700 18px/1.2 var(--lg-display);letter-spacing:-.02em;color:var(--lg-ink)}
 #lgCard .lg-brand small{display:block;color:var(--lg-muted);font:400 12.5px/1.5 var(--lg-ui)}
-#lgCard .lg-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#lgCard .lg-row{display:grid;grid-template-columns:1fr;gap:10px}
 #lgCard label{display:block;font:600 12px/1.5 var(--lg-ui);color:var(--lg-muted);margin-bottom:4px;text-transform:none;letter-spacing:normal}
 #lgCard .lg-pw{position:relative}
 #lgCard input{width:100%;height:38px;padding:0 11px;border:1px solid var(--lg-line);border-radius:10px;
@@ -716,11 +719,15 @@ html[data-theme="dark"] #loginGate{
 #lgCard .lg-go:hover{background:var(--lg-goh)}
 #lgCard .lg-go:focus-visible{outline:none;box-shadow:0 0 0 3px var(--lg-ring)}
 #lgCard .lg-go:disabled{opacity:.72;cursor:progress}
-#lgCard .lg-msg{min-height:20px;margin:9px 0 0;font:400 12.5px/1.5 var(--lg-ui);color:var(--lg-muted)}
+#lgCard .lg-msg{min-height:17px;margin:7px 0 0;font:400 12.5px/1.5 var(--lg-ui);color:var(--lg-muted)}
 #lgCard .lg-msg.lg-bad{color:var(--lg-bad);font-weight:600}
+#lgCard .lg-note{margin:7px 0 0;padding-top:9px;border-top:1px solid var(--lg-line);
+  font:400 12px/1.6 var(--lg-ui);color:var(--lg-muted)}
+#lgCard .lg-note a{color:var(--lg-accent);text-decoration:none;font-weight:600;border:0;background:none}
+#lgCard .lg-note a:hover,#lgCard .lg-note a:focus-visible{text-decoration:underline}
 #lgCard.lg-shake{animation:lg-shake .32s}
 @keyframes lg-shake{25%{transform:translateX(-6px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
-@media (max-width:480px){#lgCard .lg-row{grid-template-columns:1fr}#lgCard{padding:18px 16px 14px}}
+@media (max-width:480px){#lgCard{padding:18px 16px 14px}}
 @media (prefers-reduced-motion:reduce){#lgCard.lg-shake{animation:none}}
 </style>
 <div id="loginGate" role="dialog" aria-modal="true" aria-label="Sign in">
@@ -733,9 +740,12 @@ html[data-theme="dark"] #loginGate{
         <div><label for="lgPass">Password</label><div class="lg-pw"><input id="lgPass" name="password" type="password" autocomplete="current-password"><button class="lg-eye" id="lgEye" type="button" aria-pressed="false" aria-controls="lgPass">Show</button></div></div>
       </div>
       <button class="lg-go" id="lgGo" type="submit">Sign in</button>
-      <p class="lg-msg" id="lgMsg" role="status" aria-live="polite">Ask Hussain if you don't have an account.</p>
+      <p class="lg-msg" id="lgMsg" role="status" aria-live="polite"></p>
     </form>
     <noscript><p class="lg-msg lg-bad">This page needs JavaScript to sign in.</p></noscript>
+    <p class="lg-note">Can't sign in? Contact Hussain S I &mdash;
+      <a href="https://www.linkedin.com/in/hussain-s-i/" target="_blank" rel="noopener noreferrer">LinkedIn</a> or
+      <a href="mailto:hussain.psum@gmail.com">hussain.psum@gmail.com</a></p>
   </main>
 </div>
 <script id="lgScript">
@@ -744,7 +754,9 @@ html[data-theme="dark"] #loginGate{
   /* Accounts come from users.csv next to this page, read when you press Sign in.
      Edit that file and the next sign-in already uses it. */
   var FILE = 'users.csv';
-  var SKEY = 'compiler-login:v2';
+  var SKEY = 'compiler-login:v3';
+  var HOURS = 12;                       /* how long one sign-in lasts */
+  var MAXAGE = HOURS * 60 * 60 * 1000;
   var root = document.documentElement;
   root.classList.add('lg-locked');
   var $ = function (id) { return document.getElementById(id); };
@@ -752,17 +764,26 @@ html[data-theme="dark"] #loginGate{
   var norm = function (s) { return String(s == null ? '' : s).normalize('NFC').trim(); };
   var say = function (t, bad) { msg.textContent = t; msg.className = bad ? 'lg-msg lg-bad' : 'lg-msg'; };
 
-  /* every account signed in with in this tab: each playground has its own users.csv,
-     so each one opens with whichever of them it knows */
+  /* Every account signed in with, kept for HOURS from the first sign-in and then dropped.
+     Each playground has its own users.csv, so each one opens with whichever of them it knows. */
   var session = {
-    get: function () {
-      try { var v = JSON.parse(sessionStorage.getItem(SKEY) || 'null'); return v && v.length ? v : []; } catch (e) { return []; }
+    read: function () {
+      try {
+        var v = JSON.parse(localStorage.getItem(SKEY) || 'null');
+        if (!v || !v.t || !v.list || !v.list.length) return null;
+        if (Date.now() - v.t > MAXAGE) { session.clear(); return null; }   /* the 12 hours are up */
+        return v;
+      } catch (e) { return null; }
     },
+    get: function () { var v = session.read(); return v ? v.list : []; },
+    endsAt: function () { var v = session.read(); return v ? v.t + MAXAGE : 0; },
     add: function (u, p) {
-      var keep = session.get().filter(function (a) { return a.u.toLowerCase() !== u.toLowerCase(); });
-      try { sessionStorage.setItem(SKEY, JSON.stringify([{u: u, p: p}].concat(keep).slice(0, 20))); } catch (e) {}
+      var v = session.read();
+      var keep = (v ? v.list : []).filter(function (a) { return a.u.toLowerCase() !== u.toLowerCase(); });
+      /* the clock starts at the first sign-in and is not pushed back by later ones */
+      try { localStorage.setItem(SKEY, JSON.stringify({t: v ? v.t : Date.now(), list: [{u: u, p: p}].concat(keep).slice(0, 20)})); } catch (e) {}
     },
-    clear: function () { try { sessionStorage.removeItem(SKEY); } catch (e) {} }
+    clear: function () { try { localStorage.removeItem(SKEY); } catch (e) {} }
   };
 
   /* a small CSV reader: BOM, CRLF, "quoted, fields", comma or semicolon */
@@ -783,16 +804,54 @@ html[data-theme="dark"] #loginGate{
     return rows.filter(function (r) { return r.join('').trim() !== ''; });
   }
 
-  /* [{u, p}] from the file: uses the Username/Password headings if they are there,
-     otherwise the first two columns */
+  /* A date from the Start or Expires column. Understands 2026-09-30, 30-09-2026, 30/09/2026
+     and 30-Sep-2026. Day comes first unless the numbers say otherwise (13/09 can only be a day,
+     09/13 can only be a month). Anything it cannot read counts as "no limit". */
+  var MONTHS = 'jan feb mar apr may jun jul aug sep oct nov dec'.split(' ');
+  function parseDate(s, endOfDay) {
+    s = norm(s);
+    if (!s) return 0;
+    var m, y, mo, d;
+    if ((m = /^(\d{4})[-\/. ](\d{1,2})[-\/. ](\d{1,2})$/.exec(s))) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else if ((m = /^(\d{1,2})[-\/. ](\d{1,2})[-\/. ](\d{2,4})$/.exec(s))) {
+      var a = +m[1], b = +m[2];
+      if (a > 12 && b <= 12) { d = a; mo = b; }            /* 30/09 - only a day can be 30 */
+      else if (b > 12 && a <= 12) { d = b; mo = a; }        /* 09/30 - written the other way round */
+      else { d = a; mo = b; }                               /* both could be either: day first */
+      y = +m[3]; if (y < 100) y += 2000;
+    } else if ((m = /^(\d{1,2})[-\/. ]([A-Za-z]{3,})[-\/. ](\d{2,4})$/.exec(s))) {
+      d = +m[1]; mo = MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()) + 1; y = +m[3]; if (y < 100) y += 2000;
+    } else if ((m = /^([A-Za-z]{3,})[-\/. ](\d{1,2})[,]?[-\/. ](\d{2,4})$/.exec(s))) {
+      mo = MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1; d = +m[2]; y = +m[3]; if (y < 100) y += 2000;
+    } else return 0;
+    if (!(y > 1970 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31)) return 0;
+    var dt = endOfDay ? new Date(y, mo - 1, d, 23, 59, 59, 999) : new Date(y, mo - 1, d, 0, 0, 0, 0);
+    return dt.getMonth() === mo - 1 && dt.getDate() === d ? dt.getTime() : 0;   /* 31-Feb and friends */
+  }
+  var fmtDate = function (t) {
+    var d = new Date(t);
+    return d.getDate() + ' ' + ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.getMonth()] + ' ' + d.getFullYear();
+  };
+
+  /* [{u, p, start, end}] from the file: uses the headings when they are there,
+     otherwise the first two columns are the username and the password */
   function accountsFrom(text) {
     var rows = parseCsv(text);
     if (!rows.length) return [];
-    var iu = 0, ip = 1, first = rows[0].map(function (c) { return c.trim().toLowerCase(); });
-    var fu = first.findIndex(function (c) { return /^(user|username|user name|name|login|id|email)$/.test(c); });
-    var fp = first.findIndex(function (c) { return /^(pass|password|pwd|passcode)$/.test(c); });
-    if (fu > -1 && fp > -1) { iu = fu; ip = fp; rows = rows.slice(1); }
-    return rows.map(function (r) { return {u: norm(r[iu]), p: norm(r[ip])}; }).filter(function (a) { return a.u && a.p; });
+    var iu = 0, ip = 1, is = -1, ie = -1;
+    var head = rows[0].map(function (c) { return c.trim().toLowerCase(); });
+    var at = function (re) { for (var i = 0; i < head.length; i++) if (re.test(head[i])) return i; return -1; };
+    var fu = at(/^(user|username|user ?name|name|login|id|email)$/);
+    var fp = at(/^(pass|password|pwd|passcode)$/);
+    if (fu > -1 && fp > -1) {
+      iu = fu; ip = fp;
+      is = at(/^(start|start ?date|from|valid ?from|begins?|active ?from)$/);
+      ie = at(/^(expir\w*|expir\w* ?date|end|end ?date|valid ?(till|until|to)|till|until|last ?day)$/);
+      rows = rows.slice(1);
+    }
+    return rows.map(function (r) {
+      return {u: norm(r[iu]), p: norm(r[ip]), start: is > -1 ? parseDate(r[is], false) : 0, end: ie > -1 ? parseDate(r[ie], true) : 0};
+    }).filter(function (a) { return a.u && a.p; });
   }
 
   var pending = null;
@@ -803,16 +862,30 @@ html[data-theme="dark"] #loginGate{
     }).then(accountsFrom).catch(function (e) { pending = null; throw e; });
     return pending;
   }
-  var matches = function (list, u, p) {
+  var find = function (list, u, p) {
     var n = norm(u).toLowerCase(), w = norm(p);
-    return list.some(function (a) { return a.u.toLowerCase() === n && a.p === w; });
+    for (var i = 0; i < list.length; i++) if (list[i].u.toLowerCase() === n && list[i].p === w) return list[i];
+    return null;
   };
+  /* null while the account may be used, otherwise why it may not */
+  var closed = function (a) {
+    var now = Date.now();
+    if (a.start && now < a.start) return 'This account starts on ' + fmtDate(a.start) + '.';
+    if (a.end && now > a.end) return 'This account ran out on ' + fmtDate(a.end) + '.';
+    return null;
+  };
+  var usable = function (list, u, p) { var a = find(list, u, p); return a && !closed(a) ? a : null; };
 
-  function unlock(who) {
+  function unlock(who, acc) {
     root.classList.remove('lg-locked');
     if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
     var st = $('lgStyle'); if (st && st.parentNode) st.parentNode.removeChild(st);
     addSignOut(who);
+    /* ask again when the sign-in runs out, or when the account's last day ends - whichever is first */
+    var until = session.endsAt();
+    if (acc && acc.end && acc.end < until) until = acc.end;
+    var left = until - Date.now();
+    if (left > 0) setTimeout(function () { session.clear(); location.reload(); }, Math.min(left, 2147483000));
   }
   function addSignOut(who) {
     if ($('signOut')) return;
@@ -820,7 +893,8 @@ html[data-theme="dark"] #loginGate{
     var b = document.createElement('button');
     b.type = 'button'; b.id = 'signOut'; b.className = theme ? theme.className : '';
     b.textContent = 'Sign out';
-    b.title = 'Signed in as ' + who + '. Signs you out of every playground in this tab.';
+    var ends = new Date(session.endsAt());
+    b.title = 'Signed in as ' + who + ' until ' + ends.toLocaleString() + '. Signs you out of every playground.';
     b.addEventListener('click', function () { session.clear(); location.reload(); });
     if (theme && theme.parentNode) theme.parentNode.insertBefore(b, theme);
     else { b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:99999;padding:6px 12px;border-radius:9px;font:600 12px system-ui,sans-serif'; document.body.appendChild(b); }
@@ -849,11 +923,13 @@ html[data-theme="dark"] #loginGate{
     busy = true; go.disabled = true; go.textContent = 'Signing in…'; say('Checking…');
     var done = function () { busy = false; go.disabled = false; go.textContent = 'Sign in'; };
     accounts().then(function (list) {
-      if (matches(list, shown, password)) { session.add(shown, password); say('Opening…'); ready(function () { unlock(shown); }); done(); return; }
+      var a = find(list, shown, password);
+      if (a && !closed(a)) { session.add(shown, password); say('Opening…'); ready(function () { unlock(shown, a); }); done(); return; }
       setTimeout(function () {
-        say('Wrong username or password.', true);
+        say(a ? closed(a) : 'Wrong username or password.', true);
         card.classList.remove('lg-shake'); void card.offsetWidth; card.classList.add('lg-shake');
-        pass.select(); done();
+        if (!a) pass.select();
+        done();
       }, 450);
     }).catch(function (err) { say(cannotRead(err), true); done(); });
   });
@@ -862,13 +938,19 @@ html[data-theme="dark"] #loginGate{
     var ring = session.get();
     if (!ring.length) { user.focus(); return; }
     accounts().then(function (list) {
-      for (var i = 0; i < ring.length; i++) if (matches(list, ring[i].u, ring[i].p)) return unlock(ring[i].u);
+      for (var i = 0; i < ring.length; i++) {
+        var a = usable(list, ring[i].u, ring[i].p);
+        if (a) return unlock(ring[i].u, a);
+      }
       user.focus();
     }).catch(function () { user.focus(); });
   });
 })();
 </script>
 <!--LOGIN-GATE-END-->
+
+
+
 
 <div class="app">
   <header class="bar">
@@ -10311,7 +10393,7 @@ const themeBtn = $('#theme');
 function effectiveDark() { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
 function syncTheme() { const d = effectiveDark(); themeBtn.textContent = d ? 'Light mode' : 'Dark mode'; themeBtn.setAttribute('aria-pressed', String(d)); }
 const savedTheme = store.get('theme', null);
-if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+document.documentElement.dataset.theme = savedTheme || 'light';   /* light unless someone picked dark */
 themeBtn.addEventListener('click', () => { const t = effectiveDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; store.set('theme', t); syncTheme(); if (PTAB === 'er') requestAnimationFrame(drawErLines); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', syncTheme);
 const speedIn = $('#speed');
